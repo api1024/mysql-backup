@@ -1,5 +1,5 @@
 {
-    "name": "phelium/mysql-backup",
+    "name": "api1024/mysql-backup",
     "description": "Backup easily your MySQL database !",
     "keywords": ["mysql", "backup", "dump", "database"],
     "license": "GNU GPL 2.0",
