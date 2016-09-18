@@ -110,6 +110,7 @@ class MySQLBackup
     public $addIfNotExists = true;
 
 
+    public $filterSql = null;
 
 
     /**
@@ -344,6 +345,9 @@ class MySQLBackup
         return $this;
     }
 
+    public function addFilter($sql) {
+        $this->filterSql = $sql;
+    }
 
     /**
      * Dump SQL database with selected tables
@@ -357,23 +361,34 @@ class MySQLBackup
             $this->addAllTables();
         }
         
+        $fp = fopen($this->filename.'.'.$this->extension, "a+");
+
         $return .= "--\n";
         $return .= "-- Backup ".$this->db['name']." - ".date('Y-m-d H:i:s')."\n";
         $return .= "--\n\n\n";
         
+        $return .= "USE ". $this->db['name'] .";\n\n";
+
         $return .= "SET FOREIGN_KEY_CHECKS=0;";
         $return .= "\n\n\n";
         
+        fwrite($fp, $return);
+        
+
         foreach ($this->tables as $table)
         {
             $stmt = $this->dbh->query('SELECT * FROM `'.$table.'`');
             $stmt->execute();
             $num_fields = $stmt->columnCount();
             
+            $return = "";
             $return .= "--\n";
             $return .= "-- Table ".$table."\n";
             $return .= "--\n\n";
             
+            fwrite($fp, $return);
+            $return = "";
+
             // Dump structure ?
             if ($this->dumpStructure === true)
             {
@@ -396,10 +411,18 @@ class MySQLBackup
                 $return .= $create_table.";\n\n";
             }
             
+            fwrite($fp, $return);
+            $return = "";
+
             // Dump datas ?
             if ($this->dumpDatas === true)
             {
-                $datas = $this->query('SELECT * FROM `'.$table.'`');
+                $sql = 'SELECT * FROM `'.$table.'`';
+                if(!empty($this->filterSql)) {
+                    $sql .= " where " . $this->filterSql;
+                }
+                vaR_dump($sql);
+                $datas = $this->query($sql);
 
                 foreach ($datas as $row)
                 {
@@ -425,17 +448,23 @@ class MySQLBackup
                     }
                     
                     $return .= ");\n";
+
+                    fwrite($fp, $return);
+                    $return = "";
                 }
             }
             
+            $return = "";
             $return .= "\n\n";
             $return .= "-- --------------------------------------------------------";
             $return .= "\n\n\n";
+            fwrite($fp, $return);
+            
         }
         
         
         // Save content in file
-        file_put_contents($this->filename.'.'.$this->extension, $return);
+        //file_put_contents($this->filename.'.'.$this->extension, $return);
         
         
         // Zip the file ?
