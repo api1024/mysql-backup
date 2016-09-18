@@ -377,7 +377,7 @@ class MySQLBackup
 
         foreach ($this->tables as $table)
         {
-            $stmt = $this->dbh->query('SELECT * FROM `'.$table.'`');
+            $stmt = $this->dbh->query('SELECT * FROM `'.$table.'` limit 1');
             $stmt->execute();
             $num_fields = $stmt->columnCount();
             
